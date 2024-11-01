@@ -16,6 +16,7 @@
             "name": "Flask", 
             "type": "debugpy", 
             "module": "flask", 
+            "request": "launch",
             "jinja": true, 
             "cwd": "${workspaceFolder}/backend", 
             "args": [
