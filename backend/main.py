@@ -31,16 +31,21 @@ generic CRUD operations depending on the listing data
 '''
 def genericCrudApi(collection:Collection, _class:any):
     if request.method in ["GET", "DELETE"]:
-        ids = []
-        if("ids" in request.args): 
-            ids = [x for x in request.args.get("ids").split(",") if len(x.strip()) != 0]
+        query:dict = {}
+
+        for argKey in request.args:
+            if argKey == "ids":
+                argVal = [x for x in request.args.get(argKey).split(",") if len(x.strip()) != 0]
+                query["_id"] = {"$in": argVal}
+            else:
+                query[argKey] = request.args.get(argKey)
 
         resp = None
         if request.method == "GET":
-            resp = collection.find({"_id": {"$in": ids}})
+            resp = collection.find(query)
             return formatApiResponse(code=APIResponse.SUCCESS, data=list(resp))
         else:
-            resp = collection.delete_many({"_id": {"$in": ids}})
+            resp = collection.delete_many(query)
             return formatApiResponse(code=APIResponse.SUCCESS, data=[{
                 "acknowledged": resp.acknowledged,
                 "deleted_count": resp.deleted_count,

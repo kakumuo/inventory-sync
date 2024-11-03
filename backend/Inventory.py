@@ -12,7 +12,7 @@ class InventoryItem(IRequredFields, ISerializable):
     def __init__(self, dict:dict={}): 
         super().__init__()
         self.name:str = None
-        self.profile_id:str = None
+        self.profileId:str = None
         self.imgPaths:list[str] = None
         self.price:float = None
         self.shippingStatus:int = None
