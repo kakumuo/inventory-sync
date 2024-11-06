@@ -1,12 +1,14 @@
 import React from "react";
 import { InventoryProfile } from "../types";
-import { api_getProfile } from "../api";
+import { api_addProfile, api_getProfile } from "../api";
 import * as Icon from '../components/Icons'
 import { Link } from "react-router-dom";
+import { eventNames } from "process";
 
 export const LoginPage = () => {
     const [profiles, setProfiles] = React.useState<InventoryProfile[]>([])
     const [isAddingProfile, setIsAddingProfile] = React.useState(false);
+    const [lastUpdatedTime, setLastUpdatedTime] = React.useState(Date.now())
     const [searchFilter, setSearchFilter] = React.useState("")
 
     React.useEffect(() => {
@@ -15,7 +17,16 @@ export const LoginPage = () => {
                 if(resp.success) setProfiles(resp.data)
                 console.log(resp.data)
             })
-    }, [])
+    }, [lastUpdatedTime])
+
+    const handleAddProfile = (ev:React.KeyboardEvent<HTMLInputElement>) => {
+        if(ev.key == "Enter" && ev.currentTarget.value.trim() != "") {
+            api_addProfile({name: ev.currentTarget.value.trim()})
+                .then(resp => setLastUpdatedTime(Date.now()))
+            ev.currentTarget.value = ""
+            ev.currentTarget.blur()
+        }
+    }
     
     return <div style={{display: 'grid', 
         gridTemplateColumns: '60% 1fr', 
@@ -38,7 +49,7 @@ export const LoginPage = () => {
 
             {!isAddingProfile ? 
                 <button style={{width: '2vw', height: '2vw', justifySelf: 'end'}} children={Icon.Add} onClick={() => setIsAddingProfile(true)} />
-                : <input type="text"  style={{height: '2vw'}} autoFocus onBlur={() => setIsAddingProfile(false)}/>
+                : <input type="text"  style={{height: '2vw'}} autoFocus onBlur={() => setIsAddingProfile(false)} onKeyDown={handleAddProfile}/>
             }
         </section>
     </div>
