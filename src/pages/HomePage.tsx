@@ -5,8 +5,6 @@ import { api_getInventory, api_getProfile } from "../api"
 import { InventoryItem, InventoryProfile } from "../types"
 import { ImageInputCarousel } from "../components/Input"
 
-
-
 export const HomePage = () => {
     const {profileId} = useParams()
     const [profile, setProfile] = React.useState<InventoryProfile>({} as InventoryProfile)
@@ -25,130 +23,66 @@ export const HomePage = () => {
             })
     }, [profileId])
 
-    const headerButtonStyle:React.CSSProperties = {
-        aspectRatio: '1.5/1'
-    }
+    return <div style={{
+        display: 'grid',
+        gridTemplateRows: 'auto auto 1fr', 
+        backgroundColor: 'white', 
+        overflow: 'hidden',
+        width: '100%', height: '100%', padding: 16, gap: 8
+    }}>
 
-    return <div style={{backgroundColor: "white", padding: 16, display: 'grid', gridTemplateRows: 'auto auto 1fr auto', gap: 16, height: 'auto'}}>
-        
+        {/* banner */}
         <header style={{display: 'flex', gap: 8}}>
-            <div style={{marginRight: 'auto'}}>
-                <h2 children={"Inventory"} />
-                <h5>{profile.name}</h5>
+            <input  style={{width: '50%', marginRight: 'auto'}}/>
+            
+            <button children={Icons.Add}/>
+            <button children={Icons.BarChart}/>
+            <button children={Icons.Settings}/>
+            <button children={Icons.Changes}/>
+            <button children={Icons.MoreOptions}/>
+        </header>
+
+        <select>
+            {["All", "EBay", "Marketplace"].map(i => <option value={i} children={i}/>) }
+        </select>
+
+        <main style={{display: 'grid', gridTemplateColumns: '3fr 2fr', gridTemplateRows: '1fr', gap: 8, overflow: 'hidden'}}>
+            <StatisticsContent />
+            <div style={{display: 'grid', gridTemplateRows: 'auto 1fr', gridTemplateColumns: '1fr', gap: 8, overflow: 'hidden'}}>
+                <header style={{display: 'grid', gridTemplateColumns: '1fr auto', gridTemplateRows: '1fr', gap: 8}}>
+                    <input /><button children={Icons.FilterList}/>
+                </header>
+                <InventoryList items={inventory} />
             </div>
-            <button style={headerButtonStyle} children={Icons.BarChart} />
-            <button style={headerButtonStyle} children={Icons.Settings} />
-            <button style={headerButtonStyle} children={Icons.Refresh} />
-            <button style={headerButtonStyle} children={Icons.Changes} />
-            <button style={headerButtonStyle} children={Icons.MoreOptions} />
-        </header>
-
-        {/* input search */}
-        <div style={{display: 'grid', gap: 4, gridTemplateColumns: "1fr auto auto"}}>
-            <input type="search" name="" id="" />
-            <button children={Icons.Add} />
-            <button children={Icons.List} />
-        </div>
-
-        <InventoryTable items={inventory} />
-        
-
-        <footer style={{display: 'flex', gap: 4}}>
-            <p style={{marginRight: 'auto'}}>1 Selected</p>
-            <button children={Icons.ArrowLeft}/>
-            {[1, 2, 3, 4].map((item, itemI) => <button style={{padding: 8}} key={itemI} children={item} />)}
-            <p style={{padding: 8}}>...</p>
-            {[7, 8, 9].map((item, itemI) => <button style={{padding: 8}} key={itemI} children={item} />)}
-            <button children={Icons.ArrowRight}/>
-            <p style={{marginLeft: 'auto'}}>Showing 10 of 30</p>
-        </footer>
-    </div>
-}
-
-
-const InventoryTable = ({items}:{items:InventoryItem[]}) => {
-    
-    const headers:string[] = [
-        "", 
-        "", 
-        "Name", 
-        "Price",
-        "Description", 
-        "Status", 
-        ""
-    ];
-
-    const TABLE_GRID_STYLE:React.CSSProperties = {
-        display: 'grid', 
-        gridTemplateRows: 'auto',
-        width: '100%',
-        gridTemplateColumns: [
-            "10%", 
-            "10%", 
-            "20%", 
-            "20%", 
-            "20%", 
-            "10%", 
-            "10%", 
-        ].join(" ")
-    }
-
-    return <div style={{display: 'flex', flexDirection: 'column', overflowY: 'scroll'}}>
-        {/* header */}
-        <header style={{...TABLE_GRID_STYLE, backgroundColor: 'lightgray'}} >{headers.map(header => <div style={{width: '100%'}} key={header}>{header}</div>)}</header>
-        <main>{items.map(item => <InventoryItemTableRow key={item._id} item={item} rowGridStyle={TABLE_GRID_STYLE} />)}</main>
-    </div>
-}
-
-const InventoryItemTableRow = ({item, rowGridStyle}:{item:InventoryItem, rowGridStyle:React.CSSProperties}) => {
-    return <details><summary style={{...rowGridStyle, alignItems: 'center'}}>
-        <div><input type="checkbox" /></div>
-        <div style={{maxWidth: '6vw', whiteSpace: 'discard-after'}}><img style={{objectFit: 'contain', width: '100%'}} src={item.imgPaths[0]}/></div>
-        <div><p>{item.name}</p><p>{item._id}</p></div>
-        <div><p>{item.price}</p></div>
-        <div><p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam, quod.</p></div>
-        <div><p>{item.shippingStatus}</p></div>
-        <div><button children={Icons.MoreOptions} /></div>
-    </summary>
-        <InventoryItemEdit item={item} />
-    </details>
-}
-
-const InventoryItemEdit = ({item}:{item:InventoryItem}) => {
-    const LABEL_STYLE:React.CSSProperties = {
-        width: '10%', 
-        height: 'auto'
-    }
-
-    const INPUT_STYLE:React.CSSProperties = {
-        flex: '90%', 
-        height: 'auto'
-    }
-
-    const Divider = () => <div style={{borderBottom: 'solid white 2px'}} />
-
-    return <div style={{backgroundColor: 'lightgray', height: "400px", padding: "16px", display: 'grid', gridTemplateRows: 'auto 1fr'}}>
-        <header style={{borderBottom: 'solid white 2px'}}>
-            <button children={"All Shops"} />
-            <button children={"Ebay"} />
-            <button children={"Facebook Marketplace"} />
-        </header>
-
-        <main style={{display: 'grid', overflowY: 'scroll', gridTemplateRows: 'repeat(10, auto) 1fr', gap: 16, padding: 16}}>
-            <InventoryItemEditSection title="General" style={{display: 'flex', flexWrap: 'wrap'}}>
-                <p style={LABEL_STYLE}>Title</p> <input style={INPUT_STYLE} />
-                <p style={LABEL_STYLE}>Price</p> <input style={INPUT_STYLE} />
-                <ImageInputCarousel />
-            </InventoryItemEditSection>
-            <Divider />
         </main>
     </div>
 }
 
-const InventoryItemEditSection = ({title, children, style}:{title:string, children?:any, style?:React.CSSProperties}) => {
-    return <section style={{display: 'grid', gridTemplateColumns: '50% auto'}}>
-        <h1>{title}</h1>
-        <aside style={style}>{children}</aside>
+const InventoryList = ({items}:{items:InventoryItem[]}) => {
+    const ListItem = ({item}:{item:InventoryItem}) => {
+        return <div style={{display: 'flex', flexWrap: 'wrap', flexDirection: 'column', border: 'solid lightgray 2px', padding: 8}}>
+            <img src={item.imgPaths[0]} />
+            <p style={{}} children={item.name}/>
+            <p style={{}} children={item._id}/>
+            <p style={{}} children={item.shippingStatus}/>
+            <p style={{}} children={item.price}/>
+        </div>
+    }
+
+    return <div style={{display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'scroll', height: '100%'}}>
+        {[...items].map(item => <ListItem item={item} />)}
+    </div>
+}
+
+const StatisticsContent = () => {
+    return <section style={{display: 'grid', gridTemplateRows: '1fr 20%', gap: 8}}>
+        <div style={{backgroundColor: 'lightpink'}} />
+        <footer style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: '100%', gap: 8}}>
+            <div style={{backgroundColor: 'lightsalmon'}}/>
+            <div style={{backgroundColor: 'lightsteelblue'}}/>
+            <div style={{backgroundColor: 'lightcoral'}}/>
+            <div style={{backgroundColor: 'lightgoldenrodyellow'}}/>
+        </footer>
     </section>
 }
 

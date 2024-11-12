@@ -93,5 +93,66 @@ export interface InventoryItem extends ISerializable {
     profile_id:string
     imgPaths:string[]
     price:number
+    category:string, 
+    subcategory:string,
+    brand:string,
     shippingStatus:number
 }
+
+export const ProductCategories = {
+    "Tops": [
+        "T-shirt",
+        "Tank top",
+        "Crop top",
+        "Tube top",
+        "Blouse",
+        "Camisole",
+        "Peplum top",
+        "Sleeveless top",
+        "Short sleeve top",
+        "Long sleeve top",
+        "Halter top",
+        "Turtleneck",
+        "Jean top",
+        "Smock",
+        "Polo shirt",
+        "Hoodie"
+    ], 
+    "Bottoms": [
+        "Jeans",
+        "Chinos",
+        "Cargo pants",
+        "Leggings",
+        "Joggers",
+        "Sweatpants",
+        "Shorts",
+        "Capri pants",
+        "Palazzo pants",
+        "Baggy pants",
+        "Tapered pants",
+        "Flared pants",
+        "Bootcut pants",
+        "Dress pants",
+        "Overalls",
+        "Jumpsuits"
+    ]
+}
+
+export const ClothingBrands = [
+    "Nike",
+    "Louis Vuitton",
+    "Chanel",
+    "Hermes",
+    "Gucci",
+    "Dior",
+    "Adidas",
+    "Zara",
+    "H&M",
+    "Calvin Klein",
+    "Tommy Hilfiger",
+    "Levi's",
+    "Burberry",
+    "Prada",
+    "Lululemon",
+    "Forever 21"
+]
