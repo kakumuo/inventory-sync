@@ -1,4 +1,0 @@
-{
-    "dbConnectionString": "mongodb://10.0.0.109:27017/",
-    "dbName": "InventoryManagementDB"
-}
