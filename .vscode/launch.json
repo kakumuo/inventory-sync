@@ -12,26 +12,19 @@
             "type": "node", 
             "console": "integratedTerminal"
         }, 
-        // {
-        //     "name": "Flask", 
-        //     "type": "debugpy", 
-        //     "module": "flask", 
-        //     "request": "launch",
-        //     "jinja": true, 
-        //     "cwd": "${workspaceFolder}/backend", 
-        //     "args": [
-        //         "--app", 
-        //         "main.py", 
-        //         "run",
-        //         "--debug"
-        //     ],
-        //     "console": "integratedTerminal"
-        // }
+        {
+            "name": "Llava", 
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "ollama",
+            "args": ["run", "llava"],
+            "console": "integratedTerminal"
+        }
     ], 
-    // "compounds": [
-    //     {
-    //         "name": "React & Flask",
-    //         "configurations": ["Flask","React"]
-    //     }
-    // ]
+    "compounds": [
+        {
+            "name": "React & Llava",
+            "configurations": ["Llava","React"]
+        }
+    ]
 }
