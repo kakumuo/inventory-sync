@@ -1,0 +1,19 @@
+{
+    "manifest_version": 2, 
+    "name": "PopGen",
+    "description": "Generates and autofills listing details on depop",
+    "version": "0.1",
+
+    "permissions": ["storage", "tabs"],
+    "content_security_policy": "script-src 'self'; object-src 'self'",
+
+    "content_scripts": [{
+        "matches": ["https://www.depop.com/**/*"], 
+        "js": ["./src/popup.js"]
+    }],
+
+    "browser_action": {
+        "default_title": "PopGen",
+        "default_popup": "./pages/settings.html"
+    }
+}

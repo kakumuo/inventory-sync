@@ -13,14 +13,16 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
+    "downlevelIteration": true,
+    "module": "ESNext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx"
-  },
-  "include": [
-    "src"
-  ]
+    "isolatedModules": false,
+    "jsx": "react-jsxdev", 
+    "outDir": "./dist/src/", 
+    "paths": {
+      "src": ["./src"],
+      "react": ["./node_modules"]
+    }
+  }
 }

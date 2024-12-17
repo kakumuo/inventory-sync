@@ -2,36 +2,26 @@
     "version": "0.2.0", 
     "configurations": [
         {
-            "name": "React",
+            "name": "Webpack",
             "request": "launch",
-            "env": {
-                "HOST": "127.0.0.1"
-            },
             "runtimeExecutable": "npm",
-            "args": ["run", "start"],
+            "args": ["run", "dev"],
             "type": "node", 
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Llava",
+            "request": "launch",
+            "runtimeExecutable": "ollama",
+            "args": ["run", "llava"],
+            "type": "node",
+            "console": "integratedTerminal"
         }, 
-        // {
-        //     "name": "Flask", 
-        //     "type": "debugpy", 
-        //     "module": "flask", 
-        //     "request": "launch",
-        //     "jinja": true, 
-        //     "cwd": "${workspaceFolder}/backend", 
-        //     "args": [
-        //         "--app", 
-        //         "main.py", 
-        //         "run",
-        //         "--debug"
-        //     ],
-        //     "console": "integratedTerminal"
-        // }
     ], 
-    // "compounds": [
-    //     {
-    //         "name": "React & Flask",
-    //         "configurations": ["Flask","React"]
-    //     }
-    // ]
+    "compounds": [
+        {
+            "name": "Webpack & Llava",
+            "configurations": ["Webpack", "Llava"]
+        }
+    ]
 }
