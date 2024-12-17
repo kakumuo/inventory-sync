@@ -15,6 +15,7 @@ A simple app to autofill generated listing details on Depop
 
 ### Future
 - Sticky on scroll
+- Button to remove all images
 - Inject extension into webpage
 - Testing page for depop listing autofill [DONE]
 - System for autofilling depop listing content
@@ -27,3 +28,5 @@ A simple app to autofill generated listing details on Depop
 ### Brainstorming
 - General UI Enhancments
 - Allow for image croping through UI
+- Undo and redo for popup images
+- Undo and redo for prompt generation
