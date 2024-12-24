@@ -2,7 +2,9 @@
   "name": "popgen",
   "version": "0.1.0",
   "private": true,
-  "types": ["firefox-webext-browser"],
+  "types": [
+    "firefox-webext-browser"
+  ],
   "dependencies": {
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
@@ -16,9 +18,11 @@
     "@types/firefox-webext-browser": "^120.0.4",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
+    "@types/sharp": "^0.32.0",
     "copy-webpack-plugin": "^12.0.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sharp": "^0.33.5",
     "ts-loader": "^9.5.1",
     "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4"

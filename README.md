@@ -3,7 +3,7 @@ A simple app to autofill generated listing details on Depop
 
 # Dependencies: 
 - React
-- Llava: https://ollama.com/library/llava
+- Llava: https://ollama.com/library/llava; https://github.com/ollama/ollama/blob/main/docs/api.md
 - Firefox Extension SDK
 - Chrome Extension SDK
 - Webpack (WebPack, WebPack CLI, TS-Loader, CopyPlugin)

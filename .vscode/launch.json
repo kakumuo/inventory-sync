@@ -2,6 +2,14 @@
     "version": "0.2.0", 
     "configurations": [
         {
+            "name": "Tests",
+            "request": "launch",
+            "runtimeExecutable": "ts-node",
+            "args": [".\\tests\\generatorTest.ts"],
+            "type": "node",
+            "console": "integratedTerminal"
+        }, 
+        {
             "name": "Webpack",
             "request": "launch",
             "runtimeExecutable": "npm",
@@ -17,11 +25,16 @@
             "type": "node",
             "console": "integratedTerminal"
         }, 
+
     ], 
     "compounds": [
         {
             "name": "Webpack & Llava",
             "configurations": ["Webpack", "Llava"]
+        }, 
+        {
+            "name": "Tests & Llava",
+            "configurations": ["Tests", "Llava"]
         }
     ]
 }
