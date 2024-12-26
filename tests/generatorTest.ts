@@ -15,6 +15,5 @@ const listingGen = new ListingGenerator(new LlavaModelHandler("127.0.0.1", 11434
 ;(async() => {
     let val = await listingGen.execStep()
     val = await listingGen.execStep()
-
     val = await listingGen.execStep()
 })()
