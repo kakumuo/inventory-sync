@@ -1,81 +1,4 @@
-/*
-FEATURES: 
-    - dynamic generation steps depending on the last result
-    - restart generation at specific steps
-    - heirarchy based generation
-*/
-
-
-export class ListingGenerator {
-    private modelHandler:ModelHandler
-    private curDecisionNode:DecisionTreeNode
-    private context:ListingGeneratorContext
-    private listingImages:string[]
-
-    constructor(modelHandler:ModelHandler, context:ListingGeneratorContext, listingImages:string[]=[]) {
-        this.modelHandler = modelHandler    
-        this.context = context
-        this.curDecisionNode = this.context.decisionMap['reset']
-        this.listingImages = listingImages
-    }
-
-    setImages(listingImages:string[]){
-        this.listingImages = listingImages
-    }
-
-    setModelHandler(modelHandler:ModelHandler){
-        this.modelHandler = modelHandler
-    }
-
-    setContext(context:ListingGeneratorContext){
-        this.context = context
-    }
-
-    async execStep(gotoNextStep:boolean = false){
-        console.log(`============= RUNNING PROMPT: ${this.curDecisionNode.id} =============`)
-        const targetPrompt = this.curDecisionNode.prompt
-        const resp = await this.modelHandler.sendPrompt(targetPrompt, this.curDecisionNode.id != 'reset' ? this.listingImages : [])
-        
-        if(gotoNextStep) {
-            if('' in this.curDecisionNode.nextSteps)
-                this.curDecisionNode = this.curDecisionNode.nextSteps['']
-            else if (resp.response in this.curDecisionNode.nextSteps)
-                this.curDecisionNode = this.curDecisionNode.nextSteps['']
-        }
-
-        console.log(`=======> Response: ${resp.response}`)
-
-        return resp
-    }
-
-    setStep(stepName:string):boolean{
-        if(stepName in this.context.decisionMap){
-            this.curDecisionNode = this.context.decisionMap[stepName]
-            return true
-        }
-        return false
-    }
-}
-
-/*
-DECISION MAPPING
-*/
-
-class DecisionTreeNode {
-    prompt:string = ""
-    id:'reset'|string
-    nextSteps:{[key:string]:DecisionTreeNode}
-
-    constructor(params:{id:'reset'|string, prompt:string}){
-        this.prompt = params.prompt
-        this.id = params.id
-        this.nextSteps = {}
-    }
-}
-
-interface ListingGeneratorContext {
-    decisionMap:{[key:string]: DecisionTreeNode}
-}
+import {DecisionTreeNode, ListingGeneratorContext} from './ListingGenerator'
 
 export class DepopGeneratorContext implements ListingGeneratorContext {
     decisionMap: {[key:string]: DecisionTreeNode}
@@ -88,76 +11,65 @@ export class DepopGeneratorContext implements ListingGeneratorContext {
 
         this.decisionMap['description'] = new DecisionTreeNode({
             id: 'description', 
-            prompt: `
-            You are a fashion buyer for an online retailer.
-            Write a very short product description of the items in the image that would go on a retail website. 
-            Write the response without quotation marks.
+            prompt: `Write a single sentence product listing description to attract potential buyers. 
+            Write it from the perspective of someone trying to sell list their clothing. 
             `
         })
 
         this.decisionMap['category'] = new DecisionTreeNode({
             id: 'category', 
-            prompt: `
-            What gender is the clothing item belong to
-                Mens | Womens
-            What category does the clothing item belong to?
-                Tops | Bottoms | Coats and Jackets | Jumpsuits and Rompers | Suits 
-            Select a response in the format "{gender} / {category}". For example "Mens / Bottoms".
-            Respond without quotations.
+            prompt: ` What gender-category combination  is the clothing item belong to?  Select one.
+                ${formatOptions(['Mens / Tops' , 'Mens / Bottoms' , 'Mens / Coats and Jackets' , 'Mens / Jumpsuits and Rompers' , 'Mens / Suits'
+                    , 'Womens / Tops' , 'Womens / Bottoms' , 'Womens / Coats and Jackets' 
+                    , 'Womens / Jumpsuits and Rompers' , 'Womens / Suits'])}
             `
         })
         
         this.decisionMap['tops-subcategory'] = new DecisionTreeNode({
             id: 'tops-subcategory', 
-            prompt: `
-            What subcategory does it belong to? 
-                T-Shirts | Hoodies | Sweatshirts | Sweaters | Cardigans | Shirts | Polo shirts | Blouses | Crop tops | Tank tops and camis | Corsets | Bodysits | Other
-            Select a response.
+            prompt: `[subcategory] What subcategory does it belong to?  Select one.
+                ${formatOptions(['T-Shirts', 'Hoodies', 'Sweatshirts', 'Sweaters', 'Cardigans', 
+                    'Shirts', 'Polo shirts', 'Blouses', 'Crop tops', 'Tank tops and camis', 'Corsets', 'Bodysits', 'Other'])}
+            Respond in json format.
             `
         })
 
         this.decisionMap['bottoms-subcategory'] = new DecisionTreeNode({
             id: 'bottoms-subcategory', 
-            prompt: `
-            What subcategory does it belong to? 
-                Jeans | Pants | Sweatpants | Shorts | Leggings | Skirts | Other
-            Select a response.
+            prompt: `[subcategory] What subcategory does it belong to?  Select one.
+                ${formatOptions(['Jeans', 'Pants', 'Sweatpants', 'Shorts', 'Leggings', 'Skirts', 'Other'])}
+            Respond in json format.
             `
         })
 
         this.decisionMap['coats-subcategory'] = new DecisionTreeNode({
             id: 'coats-subcategory',
-            prompt: `
-            What subcategory does it belong to? 
-                Coats | Jackets | Vests | Other
-            Select a response.
+            prompt: `[subcategory] What subcategory does it belong to? Select one of the below options. 
+                ${formatOptions(['Coats', 'Jackets', 'Vests', 'Other'])}
+            Respond in json format.
             `
         })
         
         this.decisionMap['jumpsuits-subcategory'] = new DecisionTreeNode({
             id: 'jumpsuits-subcategory',
-            prompt: `
-            What subcategory does it belong to? 
-                Jumpsuits | Rompers | Overalls | Other
-            Select a response.
+            prompt: `[subcategory] What subcategory does it belong to?  Select one.
+                ${formatOptions(['Jumpsuits', 'Rompers', 'Overalls', 'Other'])}
+            Respond in json format.
             `
         })
         
         this.decisionMap['suits-subcategory'] = new DecisionTreeNode({
             id: 'suits-subcategory',
-            prompt: `
-            What subcategory does it belong to? 
-                Suits | Tailored jackets | Tailored trousers | Vests | Tuxedos | Other
-            Select a response.
+            prompt: `[subcategory] What subcategory does it belong to?  Select one.
+                ${formatOptions(['Suits', 'Tailored jackets', 'Tailored trousers', 'Vests', 'Tuxedos', 'Other'])}
             `
         })      
 
         this.decisionMap['footwear-subcategory'] = new DecisionTreeNode({
             id: 'footwear-subcategory',
-            prompt: `
-            What subcategory does it belong to? 
-                Sneakers | Sandals | Boots | Other | Pumps
-            Select a response.
+            prompt: `[subcategory] What subcategory does it belong to?  Select one.
+                ${formatOptions(['Sneakers', 'Sandals', 'Boots', 'Pumps', 'Other'])}
+            Respond in json format.
             `
         })
 
@@ -219,46 +131,44 @@ export class DepopGeneratorContext implements ListingGeneratorContext {
                 .build()
         })
 
-
         this.decisionMap['color'] = new DecisionTreeNode({
             id: "color",
-            prompt: `What is the color of the item? Choose up to 2.
-                ${[
+            prompt: `[Color] What colors is the item comprised of? Choose up to 2.
+                ${formatOptions([
                     'Black', 'Grey', 'White', 'Brown', 'Tan', 'Cream', 'Yellow', 'Red', 'Burgundy', 
                     'Orange', 'Pink', 'Purple', 'Blue', 'Navy', 'Green', 'Khaki', 'Multi', 'Silver', 'Gold'
-                ].join(" | ")}
-            If the item comprises of multiple main colors, choose [multi] as the option. Select a response.`
+                ])}
+            Respond in json format.`
         })
 
         this.decisionMap['source'] = new DecisionTreeNode({
             id: "source",
-            prompt: `Where might have this item been sourced from? Choose up to 2.
-                ${[
+            prompt: `[source] Select a source from the below options? Choose the best possible option(s). Choose up to 2.
+                ${formatOptions([
                     'Vintage', 'Preloved', 'Reworked / Upcycled', 'Custom', 'Handmade', 'Deadstock', 
                     'Designer', 'Repaired'
-                ].join(" | ")}
-            Select a response.`
+                ])}`
         })
 
         this.decisionMap['age'] = new DecisionTreeNode({
             id: "age",
-            prompt: `What is the age of the item? Choose up to 1.
-                ${[
+            prompt: `[age] Select an age from the below options? Choose up to 1.
+                ${formatOptions([
                     'Modern', '00s', '90s', '80s', '70s', '60s', '50s', 'Antique'
-                ].join(" | ")}
-            Select a response.`
+                ])}
+            Respond in json format.`
         })
 
         this.decisionMap['style'] = new DecisionTreeNode({
             id: "style",
-            prompt: `What is the style of the item? Choose up to 3.
-                ${[
+            prompt: `[style] Select a style(s) from the below options. Choose up to 3.
+                ${formatOptions([
                     'Streetwear', 'Sportswear', 'Loungewear', 'Goth', 'Retro', 'Boho', 'Western', 'Indie', 
                     'Skater', 'Rave', 'Costume', 'Cosplay', 'Grunge', 'Emo', 'Minimalist', 'Preppy', 
                     'Avant Garde', 'Punk', 'Glam', 'Regency', 'Casual', 'Utility', 'Futuristic', 'Cottage', 
                     'Kidcore', 'Y2K', 'Biker', 'Gorpcore', 'Twee', 'Coquette', 'Whimsygoth'
-                ].join(" | ")}
-            Select a response.`
+                ])}
+                Respond in json format.`
         })
 
 
@@ -276,8 +186,8 @@ export class DepopGeneratorContext implements ListingGeneratorContext {
             'Womens / Tops': this.decisionMap['tops-subcategory'],
             'Mens / Bottoms': this.decisionMap['bottoms-subcategory'],
             'Womens / Bottoms': this.decisionMap['bottoms-subcategory'],
-            'Mens / Coats': this.decisionMap['coats-subcategory'],
-            'Womens / Coats': this.decisionMap['coats-subcategory'],
+            'Mens / Coats and Jackets': this.decisionMap['coats-subcategory'],
+            'Womens / Coats and Jackets': this.decisionMap['coats-subcategory'],
             'Mens / Jumpsuits': this.decisionMap['jumpsuits-subcategory'],
             'Womens / Jumpsuits': this.decisionMap['jumpsuits-subcategory'],
             'Mens / Suits': this.decisionMap['suits-subcategory'],
@@ -288,7 +198,7 @@ export class DepopGeneratorContext implements ListingGeneratorContext {
             '': this.decisionMap['OMBfBrCS-subinfo']
         }
 
-        this.decisionMap['pants-subcategory'].nextSteps = {
+        this.decisionMap['bottoms-subcategory'].nextSteps = {
             'Jeans': this.decisionMap['TFOMBfBrCS-subinfo-bottoms'],
             'Pants': this.decisionMap['TFOMBfBrCS-subinfo-bottoms'],
             'Sweatpants': this.decisionMap['TFOMBfBrCS-subinfo-bottoms'],
@@ -436,59 +346,6 @@ class SubInfoPromptBuilder {
     }
 }
 
-
-
-/*
-LLM MODEL
-*/
-
-interface ModelHandler {
-    sendPrompt(prompt:string, images:string[]):Promise<ModelResponse> 
+const formatOptions = (options:string[]):string => {
+    return options.map((option, optionI) => `- ${option}`).join("\n")
 }
-
-
-interface ModelResponse {
-    model:string,
-    createdAt:Date,
-    response:string, 
-    duration:number
-}
-
-
-export class LlavaModelHandler implements ModelHandler {
-    private modelHost:string
-    private modelPort:number
-    constructor(modelHost:string, modelPort:number){
-        this.modelHost = modelHost
-        this.modelPort = modelPort
-    }
-
-    async sendPrompt(prompt:string, images:string[]=[]):Promise<ModelResponse> {
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
-        const raw = JSON.stringify({
-            model: "llava",
-            prompt: prompt,
-            stream: false,
-            images: images,
-            options: {
-                seed: 2,
-                temperature: .1
-            }
-        });
-
-        const requestOptions = {
-            method: "POST",
-            headers: myHeaders,
-            body: raw,
-            redirect: "follow"
-        } as RequestInit
-
-        const response = await fetch(`http://${this.modelHost}:${this.modelPort}/api/generate`, requestOptions)
-        const responseJson = await response.json()
-        return responseJson as ModelResponse
-    }
-}
-
-

@@ -13,35 +13,3 @@ export interface SettingsConfig {
 export interface Position {
     x:number, y:number
 }
-
-
-/* item categories
-
-Mens
-    Tops
-    Bottoms
-    Coats and Jackets
-    Jumpsuits and Rompers
-    Suits 
-    Footwear
-    Accessories
-    Sleepwear
-    Underwear
-    Swimwear
-    Costume
-    
-Womens
-    Tops
-    Bottoms
-    Dresses
-    Coats and Jackets
-    Jumpsuits and Rompers
-    Suits 
-    Footwear
-    Accessories
-    Sleepwear
-    Underwear
-    Swimwear
-    Costume
-
-*/ 

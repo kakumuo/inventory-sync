@@ -1,5 +1,7 @@
-import {DepopGeneratorContext, ListingGenerator, LlavaModelHandler} from '../src/ListingGenerator'
+import {ListingGenerator} from '../src/generators/ListingGenerator'
 import * as fs from 'fs'
+import { LlavaModelHandler } from '../src/generators/LLavaModel'
+import { DepopGeneratorContext } from '../src/generators/DepopGenerator'
 
 const fileDir = "./tests/testImages"
 const images:string[] = []
@@ -13,7 +15,9 @@ for(let imagefilename of fs.readdirSync(fileDir)){
 const listingGen = new ListingGenerator(new LlavaModelHandler("127.0.0.1", 11434), new DepopGeneratorContext(), images)
 
 ;(async() => {
-    let val = await listingGen.execStep()
-    val = await listingGen.execStep()
-    val = await listingGen.execStep()
+    await listingGen.execStep()
+
+    for(let i = 0; i < 8; i += 1)
+        await listingGen.execStep()
+
 })()
