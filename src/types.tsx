@@ -8,6 +8,7 @@ export enum LLMType {
 export interface SettingsConfig {
     targetModel:LLMType, 
     hostPath:string
+    hostPort:number
 }
 
 export interface Position {

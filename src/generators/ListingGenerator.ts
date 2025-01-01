@@ -5,16 +5,16 @@ FEATURES:
     - heirarchy based generation
 */
 
+import { LlavaModelHandler, ModelContext, ResponseSchema, ResponseSchemaObject } from "./LLavaModel"
+
 export class ListingGenerator {
     private modelHandler:ModelHandler
-    private curDecisionNode:DecisionTreeNode
-    private context:ListingGeneratorContext
+    private context:ModelContext
     private listingImages:string[]
 
-    constructor(modelHandler:ModelHandler, context:ListingGeneratorContext, listingImages:string[]=[]) {
+    constructor(modelHandler:ModelHandler, context:ModelContext, listingImages:string[]=[]) {
         this.modelHandler = modelHandler    
         this.context = context
-        this.curDecisionNode = this.context.decisionMap['reset']
         this.listingImages = listingImages
     }
 
@@ -26,55 +26,21 @@ export class ListingGenerator {
         this.modelHandler = modelHandler
     }
 
-    setContext(context:ListingGeneratorContext){
+    setContext(context:ModelContext){
         this.context = context
     }
 
-    async execStep(gotoNextStep:boolean = true){
-        console.log(`============= RUNNING PROMPT: ${this.curDecisionNode.id} =============`)
-        const targetPrompt = this.curDecisionNode.prompt
-        const resp = await this.modelHandler.sendPrompt(targetPrompt, this.curDecisionNode.id != 'reset' ? this.listingImages : [])
-        
-        if(gotoNextStep) {
-            if (resp.targetResponse.length == 1 && resp.targetResponse[0] in this.curDecisionNode.nextSteps)
-                this.curDecisionNode = this.curDecisionNode.nextSteps[resp.targetResponse[0]]
-            else if('' in this.curDecisionNode.nextSteps)
-                this.curDecisionNode = this.curDecisionNode.nextSteps['']
+    async generate(targetFields:string[]=[]){
+        let targetFormat:ResponseSchema = Object.assign({}, this.context.responseFormat)
+        if(targetFields.length > 0){
+            (targetFormat as ResponseSchemaObject).required = [...targetFields]
         }
 
-        console.log(`=======> Response: <<${resp.targetResponse}>>`)
-
-        return resp
+        const prompt = this.context.prompt
+        const modelResponse = await (this.modelHandler as LlavaModelHandler).sendPrompt(prompt, this.listingImages, targetFormat)
+        modelResponse.responseObj = JSON.parse(modelResponse.response)
+        return modelResponse
     }
-
-    setStep(stepName:string):boolean{
-        if(stepName in this.context.decisionMap){
-            this.curDecisionNode = this.context.decisionMap[stepName]
-            return true
-        }
-        return false
-    }
-}
-
-/*
-DECISION MAPPING
-*/
-
-export class DecisionTreeNode {
-    prompt:string = ""
-    id:'reset'|string
-    nextSteps:{[key:string]:DecisionTreeNode}
-    targetElementId:string = ""
-
-    constructor(params:{id:'reset'|string, prompt:string}){
-        this.prompt = params.prompt
-        this.id = params.id
-        this.nextSteps = {}
-    }
-}
-
-export interface ListingGeneratorContext {
-    decisionMap:{[key:string]: DecisionTreeNode}
 }
 
 /*
@@ -88,6 +54,6 @@ export interface ModelResponse {
     model:string,
     createdAt:Date,
     response:string,
-    targetResponse:string[]
+    responseObj:object
     duration:number
 }

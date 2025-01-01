@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react'
 import {createRoot} from 'react-dom/client'
 import {LLMType, Position, SettingsConfig} from './types'
+import { ListingGenerator, ModelHandler } from './generators/ListingGenerator'
+import { LlavaModelHandler, ModelContext } from './generators/LLavaModel'
+import { DepopModelContext } from './generators/DepopGenerator'
 
 const log = (message:any) => {
     console.log(`${new Date().toISOString()} - PopGen - ${message}`)
@@ -32,10 +35,10 @@ const ImageItem = ({src, onShift, onClose}:{src:string, onClose:()=>void, onShif
 }
 
 const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() => void}) => {
-    const [config, setConfig] = React.useState({} as SettingsConfig)
     const [images, setImages] = React.useState<string[]>([])
     const [dragging, setDragging] = React.useState(false)
-    const [position, setPosition] = React.useState<Position>({x: 0, y: 0})
+    const [position, setPosition] = React.useState<Position>({x: 0, y: 0}) 
+    const popgenContext = React.useContext(PopgenWindowContext)
     const MAX_IMAGES = 8
 
     const handleDrag = (mouseEv:React.MouseEvent, mouseDown:boolean) => {
@@ -50,6 +53,11 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
             setDragging(false)
         }
     }
+
+    React.useEffect(() => {
+        if(popgenContext && Object.hasOwn(popgenContext, 'listingGen') && Object.hasOwn(popgenContext.listingGen, 'setImages'))
+            popgenContext.listingGen.setImages(images)
+    }, [images])
 
     const handleImageDrop = (ev:React.DragEvent) => {
         ev.preventDefault()
@@ -81,20 +89,11 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
         setImages(tmp)
     }
 
-    React.useEffect(() => {
-        (async() => {
-            const configData = await browser.storage.local.get('popgen-settings')
-            if(configData && Object.hasOwn(configData, 'popgen-settings')){
-                setConfig(configData['popgen-settings'])
-            }else {
-                setConfig({
-                    hostPath: 'http://localhost:11434', 
-                    targetModel: LLMType.LLAVA
-                })
-            }
-        })()
-    }, [])
-
+    const handleGenerate = async () => {
+        console.log("Generating details...")
+        const response = await popgenContext.listingGen.generate()
+        console.log(response)
+    }
 
     return <div style={{
             position: 'absolute', width: 400, height: 500, 
@@ -142,15 +141,56 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
                 </main>
         }
 
-        <button>Generate</button>
+        <button onClick={handleGenerate}>Generate</button>
     </div>
 }
+
+type PopGenContextData = {
+    config:SettingsConfig,
+    listingGen:ListingGenerator,
+    modelHandler:ModelHandler,
+    modelContext:ModelContext,
+}
+
+const PopgenWindowContext = React.createContext({} as PopGenContextData)
 
 const PopgenWindowWrapper = () => {
     const [isMinimized, setIsMinimized] = React.useState(false)
     const [isOpen, setIsOpen] = React.useState(true)
+    const [config, setConfig] = React.useState({} as SettingsConfig)
+    const [listingGen, setListingGen] = React.useState({} as ListingGenerator)
+    const [modelHandler, setModelHandler] = React.useState({} as ModelHandler)
+    const [modelContext, setModelContext] = React.useState({} as ModelContext)
 
-    return <React.StrictMode>
+    React.useEffect(() => {
+        (async() => {
+            const configData = await browser.storage.local.get('popgen-settings')
+            let configDetails:SettingsConfig
+            if(Object.hasOwn(configData, 'popgen-settings')){
+                console.log("Pulling from: ", configData['popgen-settings'])
+                configDetails = configData['popgen-settings']
+                setConfig(configDetails)
+
+                let tmpModelHandler = new LlavaModelHandler("", 0)
+                if(configDetails.targetModel == 'llava')
+                    tmpModelHandler = new LlavaModelHandler(configDetails.hostPath, configDetails.hostPort)
+
+                let tmpModelContext = new DepopModelContext()
+                setModelHandler(tmpModelHandler)
+                setModelContext(tmpModelContext)
+                setListingGen(new ListingGenerator(tmpModelHandler, tmpModelContext))
+            }
+        })()
+    }, [])
+
+    return (
+    <React.StrictMode>
+    <PopgenWindowContext.Provider value={{
+        config: config,
+        listingGen: listingGen, 
+        modelHandler: modelHandler, 
+        modelContext: modelContext
+    }}>
         {
             isOpen && (isMinimized ? 
                 <PopGenMinimizedWindow onClose={() => setIsOpen(false)} onMaximize={() => setIsMinimized(false)} />
@@ -158,8 +198,9 @@ const PopgenWindowWrapper = () => {
                 <PopgenWindow onClose={() => setIsOpen(false)} onMinimize={() => setIsMinimized(true)}/>
             )
         }
-        
+    </PopgenWindowContext.Provider>
     </React.StrictMode>
+    )
 }
 
 const container = document.createElement('div')

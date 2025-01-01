@@ -17,16 +17,17 @@ const SettingsWindow = () => {
                 setConfig(configData['popgen-settings'] as SettingsConfig)
             }else {
                 setConfig({
-                    targetModel: LLMType.LLAVA, 
-                    hostPath: 'http://localhost:11434'
-                } as SettingsConfig)
+                    hostPath: 'localhost',
+                    hostPort: 11434, 
+                    targetModel: LLMType.LLAVA
+                })
             }            
         })()
     }, [])
 
     const handleConfigUpdate = (key:keyof(SettingsConfig), value:any) => {
         const tmp = Object.assign({}, config)
-        tmp[key] = value
+        ;(tmp as any)[value] = key // change as "any to specific field"
 
         console.log("updated to: ", tmp)
         setConfig(tmp)
@@ -43,6 +44,7 @@ const SettingsWindow = () => {
                 onChange={(updated) => handleConfigUpdate("targetModel", updated)}
             />
             <Input label="Host" type="text" defaultValue={config.hostPath} onChange={(updated) => handleConfigUpdate("hostPath", updated)} />
+            <Input label="Port" type="number" defaultValue={config.hostPort} onChange={(updated) => handleConfigUpdate("hostPort", updated)} />
         </main>
     </div>
 }

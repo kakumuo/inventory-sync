@@ -8,7 +8,7 @@ export class LlavaModelHandler implements ModelHandler {
         this.modelPort = modelPort
     }
 
-    async sendPrompt(prompt:string, images:string[]=[]):Promise<ModelResponse> {
+    async sendPrompt(prompt:string, images:string[]=[], format:ResponseSchema|'json' = 'json'):Promise<ModelResponse> {
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
@@ -17,13 +17,8 @@ export class LlavaModelHandler implements ModelHandler {
             prompt: prompt,
             stream: false,
             images: images,
-            format: {
-                type: 'object', 
-                properties: {
-                    response: {type: 'array', items: {type: 'string'}}
-                }, 
-                required: ['response']
-            } as LlavaResponseFormat,
+            format: format,
+            keep_alive: "20m",
             // format: 'json',
             options: {
                 seed: 1,
@@ -38,9 +33,9 @@ export class LlavaModelHandler implements ModelHandler {
             redirect: "follow"
         } as RequestInit
 
+        console.log("running fetch")
         const response = await fetch(`http://${this.modelHost}:${this.modelPort}/api/generate`, requestOptions)
         const responseJson:ModelResponse = await response.json()
-        responseJson.targetResponse = JSON.parse(responseJson.response)['response']
         return responseJson
     }
 }
@@ -53,19 +48,40 @@ type LlavaModelRequest = {
 
     suffix?: string,
     options?: LlavaModelOptions
-    format?: 'json'|LlavaResponseFormat, 
+    format?: 'json'|ResponseSchema, 
     system?: string, 
     template?: object, 
     raw?:boolean, 
     keep_alive:string, 
 }
 
-type LlavaResponseFormat = {
-    type: 'object', 
+export type ResponseSchema = {
+    type: 'integer' | 'string' | 'boolean' 
+} | {
+    type: 'array'
+    items: ResponseSchema
+    minContains?: number
+    maxContains?: number
+} | {
+    enum: string[]
+} | ResponseSchemaObject
+export type ResponseSchemaObject = {
+    type: 'object',
+    allOf?: ResponseSchema[], 
+    anyOf?: ResponseSchema[], 
+    oneOf?: ResponseSchema[],
     properties: {
-        [key:string]: {type: 'integer' | 'boolean' | 'string'} | {type: 'array', items: {type: 'integer' | 'boolean' | 'string'}}
+        [key:string]: ResponseSchema
     }, 
-    required: string[]
+    required: string[], 
+    if?: ResponseSchema
+    then?: ResponseSchema
+}
+
+export interface ModelContext {
+    prompt: string
+    responseFormat: ResponseSchema
+    targetFieldMap:{[key:string]: string}
 }
 
 /*
