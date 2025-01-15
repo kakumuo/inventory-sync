@@ -1,4 +1,5 @@
-import { ModelHandler, ModelResponse } from "./ListingGenerator";
+import { DepopModelResponseObject } from "./DepopGenerator";
+import { HandlerTarget, ModelHandler, ModelResponse } from "./ListingGenerator";
 
 export class LlavaModelHandler implements ModelHandler {
     private modelHost:string
@@ -11,6 +12,7 @@ export class LlavaModelHandler implements ModelHandler {
     async sendPrompt(prompt:string, images:string[]=[], format:ResponseSchema|'json' = 'json'):Promise<ModelResponse> {
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("Accept", "applicaiton/json")
 
         const raw = JSON.stringify({
             model: "llava",
@@ -26,17 +28,20 @@ export class LlavaModelHandler implements ModelHandler {
             }
         } as LlavaModelRequest);
 
-        const requestOptions = {
+        // console.log(images)
+
+        const requestOptions: RequestInit = {
             method: "POST",
             headers: myHeaders,
             body: raw,
             redirect: "follow"
-        } as RequestInit
+        };
+        
+        const endpoint = `${this.modelHost}:${this.modelPort}/api/generate`;
+        const response = await fetch(endpoint, requestOptions);
+        const respJson = await response.json()
 
-        console.log("running fetch")
-        const response = await fetch(`http://${this.modelHost}:${this.modelPort}/api/generate`, requestOptions)
-        const responseJson:ModelResponse = await response.json()
-        return responseJson
+        return respJson as ModelResponse
     }
 }
 
@@ -81,7 +86,6 @@ export type ResponseSchemaObject = {
 export interface ModelContext {
     prompt: string
     responseFormat: ResponseSchema
-    targetFieldMap:{[key:string]: string}
 }
 
 /*

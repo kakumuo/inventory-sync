@@ -4,7 +4,6 @@ export enum LLMType {
     CHAT_GPT = 'chatgpt'
 }
 
-
 export interface SettingsConfig {
     targetModel:LLMType, 
     hostPath:string

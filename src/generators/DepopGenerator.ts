@@ -50,29 +50,28 @@ export enum DepopModelResponseFields {
 }
 
 export type DepopModelResponseObject = {
-    [DepopModelResponseFields.description]?: string,
-    [DepopModelResponseFields.gender]?: string,
-    [DepopModelResponseFields.category]?: string,
-    [DepopModelResponseFields.subcategory]?: string,
-    [DepopModelResponseFields.length]?: string,
-    [DepopModelResponseFields.type]?: string,
-    [DepopModelResponseFields.fit]?: string[],
-    [DepopModelResponseFields.brand]?: string,
-    [DepopModelResponseFields.occasion]?: string[],
-    [DepopModelResponseFields.material]?: string[],
-    [DepopModelResponseFields.bodyfit]?: string[],
-    [DepopModelResponseFields.condition]?: string,
-    [DepopModelResponseFields.size]?: string,
-    [DepopModelResponseFields.color]?: string[],
-    [DepopModelResponseFields.source]?: string[],
-    [DepopModelResponseFields.age]?: string,
-    [DepopModelResponseFields.style]?: string[],
+    description?: string,
+    gender?: string,
+    category?: string,
+    subcategory?: string,
+    length?: string,
+    type?: string[],
+    fit?: string[],
+    brand?: string,
+    occasion?: string[],
+    material?: string[],
+    bodyfit?: string[],
+    condition?: string,
+    size?: string,
+    color?: string[],
+    source?: string[],
+    age?: string,
+    style?: string[],
 }
 
 export class DepopModelContext implements ModelContext {
     prompt: string;
     responseFormat: ResponseSchema;
-    targetFieldMap: { [key: string]: string; }
 
     constructor() {
         this.prompt = `
@@ -111,7 +110,7 @@ export class DepopModelContext implements ModelContext {
                 category: {enum: CATEGORY_OPTIONS}, 
                 subcategory: {enum: [...TOPS_SUB_OPTIONS, ...BOTTOMS_SUB_OPTIONS, ...COATSJACKETS_SUB_OPTIONS, ...JUMPSUITSROMP_SUB_OPTIONS]},
                 length: {enum: LENGTH_OPTIONS}, 
-                type: {enum: [...TYPE_BOTTOMS_OPTIONS, ...TYPE_COAT_OPTIONS, ...TYPE_JACKETS_OPTIONS, ...TYPE_JUMPSUITS_OPTIONS, ...TYPE_OVERALLS_OPTIONS]}, 
+                type: {type: 'array', items: {enum: [...TYPE_BOTTOMS_OPTIONS, ...TYPE_COAT_OPTIONS, ...TYPE_JACKETS_OPTIONS, ...TYPE_JUMPSUITS_OPTIONS, ...TYPE_OVERALLS_OPTIONS]}, maxContains: 2}, 
                 fit: {type: 'array', items: {enum: FIT_BOTTOMS_OPTIONS}, maxContains: 2},
                 occasion: {type: 'array', items: {enum: OCCASION_OPTIONS}, maxContains: 3},
                 material: {type: 'array', items: {enum: MATERIAL_OPTIONS}, maxContains: 4}, 
@@ -130,26 +129,6 @@ export class DepopModelContext implements ModelContext {
                 'occasion', 'material', 'bodyfit', 'condition', 'brand', 'size', 
                 'color', 'source', 'age', 'style'
             ], 
-        }
-
-        this.targetFieldMap = {
-            [DepopModelResponseFields.description]: 'description',
-            [DepopModelResponseFields.gender]: '[id=listingCategories__category__select]',
-            [DepopModelResponseFields.category]: '[id=listingCategories__category__select]',
-            [DepopModelResponseFields.subcategory]: '[id=listingCategories__subcategory__select]',
-            [DepopModelResponseFields.length]: '[id=dress-length-attribute__select]',
-            [DepopModelResponseFields.type]: '[id$=-fit-attribute__select]',
-            [DepopModelResponseFields.fit]: '[id$=-style-attribute__select]',
-            [DepopModelResponseFields.brand]: '[id=brand-attribute__select]',
-            [DepopModelResponseFields.occasion]: '[id=occasion-attribute__select]',
-            [DepopModelResponseFields.material]: '[id=material-attribute__select]',
-            [DepopModelResponseFields.bodyfit]: '[id=bodyfit-attribute__select]',
-            [DepopModelResponseFields.condition]: '[id=condition-attribute__select]',
-            [DepopModelResponseFields.size]: '[id=createProductSizes__sizeRow0__size__select]',
-            [DepopModelResponseFields.color]: '[id=listingSelect__listing__colour__select]',
-            [DepopModelResponseFields.source]: '[id=listingSelect__source__select]',
-            [DepopModelResponseFields.age]: '[id=listingSelect__age__select]',
-            [DepopModelResponseFields.style]: '[id=listingSelect__style__select]',
         }
     }
 }

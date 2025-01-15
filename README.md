@@ -3,10 +3,14 @@ A simple app to autofill generated listing details on Depop
 
 # Dependencies: 
 - React
-- Llava: https://ollama.com/library/llava; https://github.com/ollama/ollama/blob/main/docs/api.md
+- Llava: https://ollama.com/library/llava; 
 - Firefox Extension SDK
 - Chrome Extension SDK
 - Webpack (WebPack, WebPack CLI, TS-Loader, CopyPlugin)
+
+# Resources
+- Converting ImageURL to B64: https://formspree.io/blog/image-to-base64/
+- Llava API: https://github.com/ollama/ollama/blob/main/docs/api.md
 
 # TODO: 
 ### Fixes

@@ -3,9 +3,12 @@
     "name": "PopGen",
     "description": "Generates and autofills listing details on depop",
     "version": "0.1",
-
-    "permissions": ["storage", "tabs"],
-    "content_security_policy": "script-src 'self'; object-src 'self'",
+    
+    "permissions": [
+        "storage", "tabs", 
+        "<all_urls>"
+    ],
+    "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'; connect-src http://127.0.0.1:11434/",
 
     "content_scripts": [{
         "matches": ["https://www.depop.com/**/*"], 

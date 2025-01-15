@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react'
+import React, { Ref, useEffect } from 'react'
 import {createRoot} from 'react-dom/client'
 import {LLMType, Position, SettingsConfig} from './types'
 import { ListingGenerator, ModelHandler } from './generators/ListingGenerator'
 import { LlavaModelHandler, ModelContext } from './generators/LLavaModel'
-import { DepopModelContext } from './generators/DepopGenerator'
+import { DepopModelContext, DepopModelResponseFields, DepopModelResponseObject } from './generators/DepopGenerator'
+import { DepopAutofillContext, ListingAutofiller } from './Autofill'
 
 const log = (message:any) => {
     console.log(`${new Date().toISOString()} - PopGen - ${message}`)
@@ -35,11 +36,12 @@ const ImageItem = ({src, onShift, onClose}:{src:string, onClose:()=>void, onShif
 }
 
 const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() => void}) => {
+    const MAX_IMAGES = 8
     const [images, setImages] = React.useState<string[]>([])
+    const [windowSize, setWindowSize] = React.useState<Position>({x: 200, y: 100})
     const [dragging, setDragging] = React.useState(false)
     const [position, setPosition] = React.useState<Position>({x: 0, y: 0}) 
     const popgenContext = React.useContext(PopgenWindowContext)
-    const MAX_IMAGES = 8
 
     const handleDrag = (mouseEv:React.MouseEvent, mouseDown:boolean) => {
         if(mouseDown && !dragging) {
@@ -55,8 +57,32 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
     }
 
     React.useEffect(() => {
-        if(popgenContext && Object.hasOwn(popgenContext, 'listingGen') && Object.hasOwn(popgenContext.listingGen, 'setImages'))
-            popgenContext.listingGen.setImages(images)
+        // TODO: fix data to url, or get url directly from file
+        const canvas = document.createElement("canvas");
+
+        const fetchB64 = async (imageUrl:string) => {
+            const res = await fetch(imageUrl)
+            const buffer = await res.arrayBuffer()
+            const base64String = btoa(
+                new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+            )
+            return base64String
+        }
+
+        ;(async() => {
+            if(popgenContext.listingGen){
+                let imageDataFiles:string[] = []
+
+                for(let image of images){
+                    const imageData = await fetchB64(image)
+                    if(imageData) imageDataFiles.push(imageData)
+                }
+    
+                popgenContext.listingGen.setImages(imageDataFiles)
+            }
+        })()
+
+
     }, [images])
 
     const handleImageDrop = (ev:React.DragEvent) => {
@@ -90,13 +116,38 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
     }
 
     const handleGenerate = async () => {
-        console.log("Generating details...")
-        const response = await popgenContext.listingGen.generate()
-        console.log(response)
+        if(popgenContext.listingGen){
+            const modelResp:DepopModelResponseObject = {
+                age: "50s", 
+                bodyfit: [ "Tall", "Maternity"], 
+                brand: "Not Specified", 
+                category: "Coats and jackets", 
+                color: [ "Brown", "Tan" ], 
+                condition: "Brand New", 
+                description: "This is a product listing for the jacket displayed in the image. The jacket appears to be a men's leather bomber style coat with a fur-lined collar.", 
+                fit: [ "Slim", "Tailored" ], 
+                gender: "Men", 
+                material: [ "Leather", "Fleece" ], 
+                occasion: [ "Casual", "Outdoors" ], 
+                size: "L", 
+                source: [ "Vintage", "Handmade" ], 
+                style: [ "Biker", "Casual", "Futuristic" ], 
+                subcategory: "Jackets", 
+                type: ["Bomber", "Duster"], 
+            }
+            
+            const autofiller = new ListingAutofiller(new DepopAutofillContext(modelResp))
+            autofiller.autofill()
+
+            //TODO: implement when done testing
+            const response = await popgenContext.listingGen.generate()
+            // const modelResp:DepopModelResponseObject = response.responseObj
+            // console.log(modelResp)
+        }
     }
 
     return <div style={{
-            position: 'absolute', width: 400, height: 500, 
+            position: 'fixed', width: windowSize.x, height: windowSize.y, 
             border:'solid', top: position.y, left: position.x, zIndex: 1000, 
             display: 'grid', gridTemplateRows:'auto 1fr auto', gridTemplateColumns: 'auto',
             backgroundColor: 'white'
@@ -142,14 +193,15 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
         }
 
         <button onClick={handleGenerate}>Generate</button>
+        {/* <button disabled={images.length == 0} onClick={handleGenerate}>Generate</button> TODO: implement after testing*/}
     </div>
 }
 
 type PopGenContextData = {
-    config:SettingsConfig,
-    listingGen:ListingGenerator,
-    modelHandler:ModelHandler,
-    modelContext:ModelContext,
+    config:SettingsConfig|null,
+    listingGen:ListingGenerator|null,
+    modelHandler:ModelHandler|null,
+    modelContext:ModelContext|null,
 }
 
 const PopgenWindowContext = React.createContext({} as PopGenContextData)
@@ -157,29 +209,33 @@ const PopgenWindowContext = React.createContext({} as PopGenContextData)
 const PopgenWindowWrapper = () => {
     const [isMinimized, setIsMinimized] = React.useState(false)
     const [isOpen, setIsOpen] = React.useState(true)
-    const [config, setConfig] = React.useState({} as SettingsConfig)
-    const [listingGen, setListingGen] = React.useState({} as ListingGenerator)
-    const [modelHandler, setModelHandler] = React.useState({} as ModelHandler)
-    const [modelContext, setModelContext] = React.useState({} as ModelContext)
+    const [config, setConfig] = React.useState<SettingsConfig | null>(null)
+    const [listingGen, setListingGen] = React.useState<ListingGenerator | null>(null)
+    const [modelHandler, setModelHandler] = React.useState<ModelHandler | null>(null)
+    const [modelContext, setModelContext] = React.useState<ModelContext | null>(null)
 
     React.useEffect(() => {
         (async() => {
             const configData = await browser.storage.local.get('popgen-settings')
-            let configDetails:SettingsConfig
-            if(Object.hasOwn(configData, 'popgen-settings')){
-                console.log("Pulling from: ", configData['popgen-settings'])
-                configDetails = configData['popgen-settings']
-                setConfig(configDetails)
-
-                let tmpModelHandler = new LlavaModelHandler("", 0)
-                if(configDetails.targetModel == 'llava')
-                    tmpModelHandler = new LlavaModelHandler(configDetails.hostPath, configDetails.hostPort)
-
-                let tmpModelContext = new DepopModelContext()
-                setModelHandler(tmpModelHandler)
-                setModelContext(tmpModelContext)
-                setListingGen(new ListingGenerator(tmpModelHandler, tmpModelContext))
+            let configDetails:SettingsConfig = {
+                hostPath: 'http://127.0.0.1',
+                hostPort: 11434,
+                targetModel: LLMType.LLAVA
             }
+            
+            if(Object.hasOwn(configData, 'popgen-settings')){
+                configDetails = configData['popgen-settings']
+            }
+            setConfig(configDetails)
+
+            let tmpModelHandler = new LlavaModelHandler("", 0)
+            if(configDetails.targetModel == 'llava')
+                tmpModelHandler = new LlavaModelHandler(configDetails.hostPath, configDetails.hostPort)
+
+            let tmpModelContext = new DepopModelContext()
+            setModelHandler(tmpModelHandler)
+            setModelContext(tmpModelContext)
+            setListingGen(new ListingGenerator(tmpModelHandler, tmpModelContext))
         })()
     }, [])
 

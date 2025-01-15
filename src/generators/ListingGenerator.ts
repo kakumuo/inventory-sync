@@ -36,9 +36,13 @@ export class ListingGenerator {
             (targetFormat as ResponseSchemaObject).required = [...targetFields]
         }
 
+        console.log("generating...")
         const prompt = this.context.prompt
         const modelResponse = await (this.modelHandler as LlavaModelHandler).sendPrompt(prompt, this.listingImages, targetFormat)
-        modelResponse.responseObj = JSON.parse(modelResponse.response)
+        
+        if(!modelResponse.error)
+            modelResponse.responseObj = JSON.parse(modelResponse.response)
+        
         return modelResponse
     }
 }
@@ -46,11 +50,17 @@ export class ListingGenerator {
 /*
 LLM MODEL
 */
+export enum HandlerTarget {
+    DEPOP
+}
+
 export interface ModelHandler {
     sendPrompt(prompt:string, images:string[]):Promise<ModelResponse> 
 }
 
-export interface ModelResponse {
+export interface ModelResponse{
+    error:string,
+
     model:string,
     createdAt:Date,
     response:string,
