@@ -1,17 +1,68 @@
-import React, { Ref, useEffect } from 'react'
+import React from 'react'
 import {createRoot} from 'react-dom/client'
 import {LLMType, Position, SettingsConfig} from './types'
 import { ListingGenerator, ModelHandler } from './generators/ListingGenerator'
 import { LlavaModelHandler, ModelContext } from './generators/LLavaModel'
-import { DepopModelContext, DepopModelResponseFields, DepopModelResponseObject } from './generators/DepopGenerator'
+import { DepopModelContext, DepopModelResponseObject } from './generators/DepopGenerator'
 import { DepopAutofillContext, ListingAutofiller } from './Autofill'
+import { fetchB64String } from './utils'
 
 const log = (message:any) => {
     console.log(`${new Date().toISOString()} - PopGen - ${message}`)
 }
 
 const PopGenMinimizedWindow = ({onClose, onMaximize}:{onClose:() => void, onMaximize:() => void}) => {
-    return <div></div>
+    const [dragging, setDragging] = React.useState(false)
+    const [height, setHeight] = React.useState(0)
+    const [dragStartTS, setDragStartTS] = React.useState(Date.now())
+    const CLICK_THRESH_TS = 135
+    const closeBtnRef = React.useRef<HTMLButtonElement>(null)
+
+    React.useEffect(() => {
+        if(dragging){
+            setDragStartTS(Date.now())
+        }
+
+        const handleMouseMove = (ev:MouseEvent) => {
+            if(dragging){
+                setHeight(prev => prev + ev.movementY)
+            }
+        }
+
+        const handleMouseUp = (ev:MouseEvent) => {
+            setDragging(false)
+        }
+
+        document.addEventListener('mousemove', handleMouseMove)
+        document.addEventListener('mouseup', handleMouseUp)
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('mouseup', handleMouseUp)
+        }
+
+    }, [dragging])
+
+    const handleMaximize = (ev:React.MouseEvent) => {
+        console.log(ev)
+        if(Date.now() - dragStartTS < CLICK_THRESH_TS && (ev.target as HTMLElement).tagName == 'DIV')
+            onMaximize()
+    }
+
+    return <div style={{
+            userSelect:'none', position:'fixed', right: '0', top: height, border: 'solid', 
+            width: 100, height: 50, zIndex: 100, background: 'white', padding: 16
+        }}
+        onClick={handleMaximize}
+        onMouseDown={() => setDragging(true)}
+    >
+        <button 
+            onClick={onClose}
+            ref={closeBtnRef}
+            style={{zIndex: 101, position: 'absolute', top: 0, left: 0, transform: 'translate(-50%, -50%)'}} children={"x"}
+        />
+        Popgen
+    </div>
 }
 
 const ImageItem = ({src, onShift, onClose}:{src:string, onClose:()=>void, onShift:(left:boolean)=>void}) => {
@@ -35,46 +86,31 @@ const ImageItem = ({src, onShift, onClose}:{src:string, onClose:()=>void, onShif
     </div>
 }
 
+enum RESIZE_DIR {
+    NONE, NORTH, SOUTH, EAST, WEST
+}
+
 const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() => void}) => {
     const MAX_IMAGES = 8
     const [images, setImages] = React.useState<string[]>([])
-    const [windowSize, setWindowSize] = React.useState<Position>({x: 200, y: 100})
+    const [autofillStatus, setAutofillStatus] = React.useState<{isFilling:boolean, fillCount:number, total:number}>({isFilling: false, fillCount: 0, total: 0})
+    const [windowSize, setWindowSize] = React.useState<Position>({x: 200, y: 300})
+    const [resizing, setResizing] = React.useState<RESIZE_DIR>(0)
     const [dragging, setDragging] = React.useState(false)
     const [position, setPosition] = React.useState<Position>({x: 0, y: 0}) 
+    const MIN_HEIGHT = 200, MIN_WIDTH = 200;
+
     const popgenContext = React.useContext(PopgenWindowContext)
 
-    const handleDrag = (mouseEv:React.MouseEvent, mouseDown:boolean) => {
-        if(mouseDown && !dragging) {
-            setDragging(true)
-        }else if (mouseDown && dragging) {
-            const tmpPos = Object.assign({}, position)
-            tmpPos.x += mouseEv.movementX
-            tmpPos.y += mouseEv.movementY
-            setPosition(tmpPos)
-        }else {
-            setDragging(false)
-        }
-    }
-
     React.useEffect(() => {
-        // TODO: fix data to url, or get url directly from file
         const canvas = document.createElement("canvas");
-
-        const fetchB64 = async (imageUrl:string) => {
-            const res = await fetch(imageUrl)
-            const buffer = await res.arrayBuffer()
-            const base64String = btoa(
-                new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-            )
-            return base64String
-        }
 
         ;(async() => {
             if(popgenContext.listingGen){
                 let imageDataFiles:string[] = []
 
                 for(let image of images){
-                    const imageData = await fetchB64(image)
+                    const imageData = await fetchB64String(image)
                     if(imageData) imageDataFiles.push(imageData)
                 }
     
@@ -117,83 +153,136 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
 
     const handleGenerate = async () => {
         if(popgenContext.listingGen){
-            const modelResp:DepopModelResponseObject = {
-                age: "50s", 
-                bodyfit: [ "Tall", "Maternity"], 
-                brand: "Not Specified", 
-                category: "Coats and jackets", 
-                color: [ "Brown", "Tan" ], 
-                condition: "Brand New", 
-                description: "This is a product listing for the jacket displayed in the image. The jacket appears to be a men's leather bomber style coat with a fur-lined collar.", 
-                fit: [ "Slim", "Tailored" ], 
-                gender: "Men", 
-                material: [ "Leather", "Fleece" ], 
-                occasion: [ "Casual", "Outdoors" ], 
-                size: "L", 
-                source: [ "Vintage", "Handmade" ], 
-                style: [ "Biker", "Casual", "Futuristic" ], 
-                subcategory: "Jackets", 
-                type: ["Bomber", "Duster"], 
-            }
-            
-            const autofiller = new ListingAutofiller(new DepopAutofillContext(modelResp))
-            autofiller.autofill()
-
-            //TODO: implement when done testing
+            setAutofillStatus({isFilling: true, fillCount: 0, total: 0})
             const response = await popgenContext.listingGen.generate()
-            // const modelResp:DepopModelResponseObject = response.responseObj
-            // console.log(modelResp)
+            const modelResp:DepopModelResponseObject = response.responseObj
+            console.log(modelResp)
+            
+            const autofiller = new ListingAutofiller(new DepopAutofillContext(modelResp, images))
+            for(let i = 0; i < autofiller.totalFill; i++){
+                const resp = await autofiller.fillNext()
+                setAutofillStatus({isFilling: true, fillCount: resp.fillIndex, total: autofiller.totalFill})
+            }
+
+            setAutofillStatus({isFilling: true, fillCount: 0, total: 0})
         }
     }
 
-    return <div style={{
-            position: 'fixed', width: windowSize.x, height: windowSize.y, 
-            border:'solid', top: position.y, left: position.x, zIndex: 1000, 
-            display: 'grid', gridTemplateRows:'auto 1fr auto', gridTemplateColumns: 'auto',
-            backgroundColor: 'white'
-    }}>
-        <header style={{display: 'grid', gridTemplateColumns: '1fr auto auto', gridTemplateRows: 'auto',
-            backgroundColor: 'lightgray', padding: 8, gap: 4
-        }}
-            onMouseDown={(ev) => handleDrag(ev, true)}
-            onMouseMove={(ev) => handleDrag(ev, dragging)}
-            onMouseUp={(ev) => handleDrag(ev, false)}
-            onMouseLeave={(ev) => handleDrag(ev, false)}
-        >
-            <p>PopGen</p>
-            <button>Minimize</button>
-            <button>Close</button>
-        </header>
+    React.useEffect(() => {
+        const mouseMoveHandler = (ev:MouseEvent) => {
+            if(resizing != RESIZE_DIR.NONE){
+                let dSize:Position = {x: 0, y: 0}
+                let dPos:Position = {x: 0, y: 0}
 
+                switch(resizing){
+                    case RESIZE_DIR.NORTH:
+                        dSize.y = -1 * (dPos.y = ev.movementY)
+                        break;
+                    case RESIZE_DIR.SOUTH:
+                        dSize.y = ev.movementY
+                        break;
+                    case RESIZE_DIR.EAST:
+                        dSize.x = ev.movementX
+                        break;
+                    case RESIZE_DIR.WEST:
+                        dSize.x = -1 * (dPos.x = ev.movementX)
+                }
 
-        {
-            images.length == 0 ? 
-                <main style={{display: 'flex', border: 'dashed lightgray 4px', margin: 8}}
-                    onDrop={(ev) => handleImageDrop(ev)}
-                    onDragOver={(ev) => ev.preventDefault()}
-                >
-                    <p style={{margin: 'auto'}}>Drop Images</p>
-                </main>
-            :  
-                <main style={{display: 'grid', border: 'dashed lightgray 4px', margin: 8,
-                    gridTemplateColumns: 'repeat(4, 1fr)',
-                    gridTemplateRows: 'repeat(2, 1fr)'
-                }}
-                    onDrop={(ev) => handleImageDrop(ev)}
-                    onDragOver={(ev) => ev.preventDefault()}
-                >
-                    {images.map((image, imageI) => {
-                        return <ImageItem src={image} 
-                            onClose={() => handleImageRemove(imageI)} 
-                            onShift={(left) => handleShiftImage(imageI, left)}
-                            key={imageI}
-                        />
-                    })}
-                </main>
+                setWindowSize(prev => ({x: Math.max(MIN_WIDTH, prev.x + dSize.x), y: Math.max(MIN_HEIGHT, prev.y + dSize.y)})); 
+                setPosition(prev => ({x: prev.x + dPos.x, y: prev.y + dPos.y}))
+            }
+            else if(dragging){
+                setPosition(prev => ({x: prev.x + ev.movementX, y: prev.y + ev.movementY}))
+            }
         }
 
-        <button onClick={handleGenerate}>Generate</button>
-        {/* <button disabled={images.length == 0} onClick={handleGenerate}>Generate</button> TODO: implement after testing*/}
+        const mouseUpHandler = (ev:MouseEvent) => {
+            if(dragging) setDragging(false)
+            if(resizing != RESIZE_DIR.NONE) setResizing(RESIZE_DIR.NONE)
+        }
+
+        document.addEventListener('mousemove', mouseMoveHandler)
+        document.addEventListener('mouseup', mouseUpHandler)
+
+        return () => {  
+            document.removeEventListener('mousemove', mouseMoveHandler)
+            document.removeEventListener('mouseup', mouseUpHandler)
+        }
+    }, [resizing, dragging])
+
+
+    return <div style={{
+        position: 'fixed', width: windowSize.x, height: windowSize.y, 
+        border:'solid', top: position.y, left: position.x, zIndex: 1000, 
+        display: 'grid', gridTemplateRows:'auto 1fr auto', gridTemplateColumns: 'auto',
+        backgroundColor: 'white',
+        resize: 'both'
+    }}
+        
+    >
+        {
+            [
+                {/*border: 'solid green'  ,*/ top: '0', width:'100%', height: 4, cursor: 'n-resize', resizeDir:RESIZE_DIR.NORTH}, 
+                {/*border: 'solid orange' ,*/ bottom: '0', width:'100%',height: 4, cursor: 's-resize', resizeDir:RESIZE_DIR.SOUTH}, 
+                {/*border: 'solid blue'   ,*/ right: '0', height:'100%',width: 4, cursor: 'e-resize', resizeDir:RESIZE_DIR.EAST}, 
+                {/*border: 'solid red'    ,*/ left: '0', height:'100%',width: 4, cursor: 'w-resize', resizeDir:RESIZE_DIR.WEST}
+            ].map((divProp, divPropI) => <div key={divPropI} style={{...divProp, position: 'absolute'}} onMouseDown={() => setResizing(divProp.resizeDir)} />)
+        }
+
+        {/* <div style={{display: 'grid', gridTemplateRows:'auto 1fr auto', gridTemplateColumns: 'auto'}}> */}
+            <header 
+            onMouseDown={() => setDragging(true)}
+            style={{display: 'grid', gridTemplateColumns: '1fr auto auto', gridTemplateRows: 'auto',
+                backgroundColor: 'lightgray', padding: 8, gap: 4,
+                userSelect: 'none',
+                cursor: 'move'
+            }}>
+                <p>PopGen</p>
+                <button onClick={onMinimize}>Minimize</button>
+                <button onClick={onClose}>Close</button>
+            </header>
+            {
+                autofillStatus.isFilling ? 
+                    <main style={{display: 'flex', border: 'solid lightgray 4px', margin: 8, flexDirection: 'column'}}>
+                        <p style={{margin: 'auto'}}>Filling</p>
+                        
+                        {/* div */}
+                        {
+                        autofillStatus.total == 0 &&
+                        <div style={{display: 'grid', gridTemplateRows: '100%', gridTemplateColumns: `${autofillStatus.fillCount * 100 / autofillStatus.total}% auto`, height: '20px', border: 'solid', width: '100%'}}>
+                            <div style={{backgroundColor: 'lightgreen'}} /> 
+                        </div>
+                        }
+                    </main>
+                :
+                images.length == 0 ? 
+                    <main style={{display: 'flex', border: 'dashed lightgray 4px', margin: 8}}
+                        onDrop={(ev) => handleImageDrop(ev)}
+                        onDragOver={(ev) => ev.preventDefault()}
+                    >
+                        <p style={{margin: 'auto'}}>Drop Images</p>
+                    </main>
+                :  
+                    <main style={{display: 'grid', border: 'dashed lightgray 4px', margin: 8,
+                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gridTemplateRows: 'repeat(2, 1fr)'
+                    }}
+                        onDrop={(ev) => handleImageDrop(ev)}
+                        onDragOver={(ev) => ev.preventDefault()}
+                    >
+                        {images.map((image, imageI) => {
+                            return <ImageItem src={image} 
+                                onClose={() => handleImageRemove(imageI)} 
+                                onShift={(left) => handleShiftImage(imageI, left)}
+                                key={imageI}
+                            />
+                        })}
+                    </main>
+            }
+
+            <button onClick={handleGenerate}>Generate</button>
+            {/* <button disabled={images.length == 0 || autofillStatus.isFilling} onClick={handleGenerate}>Generate</button> */}
+        {/* </div> */}
     </div>
 }
 
@@ -207,7 +296,7 @@ type PopGenContextData = {
 const PopgenWindowContext = React.createContext({} as PopGenContextData)
 
 const PopgenWindowWrapper = () => {
-    const [isMinimized, setIsMinimized] = React.useState(false)
+    const [isMinimized, setIsMinimized] = React.useState(true)
     const [isOpen, setIsOpen] = React.useState(true)
     const [config, setConfig] = React.useState<SettingsConfig | null>(null)
     const [listingGen, setListingGen] = React.useState<ListingGenerator | null>(null)
@@ -250,8 +339,7 @@ const PopgenWindowWrapper = () => {
         {
             isOpen && (isMinimized ? 
                 <PopGenMinimizedWindow onClose={() => setIsOpen(false)} onMaximize={() => setIsMinimized(false)} />
-                :
-                <PopgenWindow onClose={() => setIsOpen(false)} onMinimize={() => setIsMinimized(true)}/>
+                :<PopgenWindow onClose={() => setIsOpen(false)} onMinimize={() => setIsMinimized(true)}/>
             )
         }
     </PopgenWindowContext.Provider>

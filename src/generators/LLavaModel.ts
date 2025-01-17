@@ -36,10 +36,16 @@ export class LlavaModelHandler implements ModelHandler {
             body: raw,
             redirect: "follow"
         };
+
+        console.log("sending...")
         
         const endpoint = `${this.modelHost}:${this.modelPort}/api/generate`;
         const response = await fetch(endpoint, requestOptions);
+
+        console.log("received response...")
         const respJson = await response.json()
+
+        console.log("converting to json")
 
         return respJson as ModelResponse
     }

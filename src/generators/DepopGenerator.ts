@@ -100,6 +100,11 @@ export class DepopModelContext implements ModelContext {
                     - type = ${TYPE_JUMPSUITS_OPTIONS}
                 if subcategory == Overalls: 
                     - type = ${TYPE_OVERALLS_OPTIONS}
+
+            NOTE: 
+            1. If the name of the brand is not identifiable, set the brand to 'Other'
+            2. For each field with multiple options, keep the values different
+            3. Fill in the materials section based on any information presented on the tags. If no tags are present guess based off the options. 
         `
 
         this.responseFormat = {
@@ -110,7 +115,7 @@ export class DepopModelContext implements ModelContext {
                 category: {enum: CATEGORY_OPTIONS}, 
                 subcategory: {enum: [...TOPS_SUB_OPTIONS, ...BOTTOMS_SUB_OPTIONS, ...COATSJACKETS_SUB_OPTIONS, ...JUMPSUITSROMP_SUB_OPTIONS]},
                 length: {enum: LENGTH_OPTIONS}, 
-                type: {type: 'array', items: {enum: [...TYPE_BOTTOMS_OPTIONS, ...TYPE_COAT_OPTIONS, ...TYPE_JACKETS_OPTIONS, ...TYPE_JUMPSUITS_OPTIONS, ...TYPE_OVERALLS_OPTIONS]}, maxContains: 2}, 
+                type: {type: 'array', maxContains: 2, items: {enum: [...TYPE_BOTTOMS_OPTIONS, ...TYPE_COAT_OPTIONS, ...TYPE_JACKETS_OPTIONS, ...TYPE_JUMPSUITS_OPTIONS, ...TYPE_OVERALLS_OPTIONS]}}, 
                 fit: {type: 'array', items: {enum: FIT_BOTTOMS_OPTIONS}, maxContains: 2},
                 occasion: {type: 'array', items: {enum: OCCASION_OPTIONS}, maxContains: 3},
                 material: {type: 'array', items: {enum: MATERIAL_OPTIONS}, maxContains: 4}, 
