@@ -17,7 +17,7 @@ const FIT_BOTTOMS_OPTIONS = ['Bootcut', 'Flare', 'High waisted', 'Low rise', 'Sk
 const OCCASION_OPTIONS = ['Casual', 'Festival', 'Gifting', 'Going Out', 'Outdoors', 'Party', 'Relaxation', 'School', 'Ski', 'Special Occasion', 'Holiday', 'Winter', 'Work', 'Workout']
 const MATERIAL_OPTIONS = ['Acrylic', 'Canvas', 'Cashmere', 'Corduroy', 'Cotton', 'Crochet', 'Denim', 'Spandex', 'Fleece', 'Hemp', 'Lace', 'Leather', 'Linen', 'Nylon', 'Polyester', 'Rayon', 'Silk', 'Suede', 'Velvet', 'Wool']
 const BODYFIT_OPTIONS = ['Maternity', 'Petite', 'Plus Size', 'Tall']
-const CONDITION_OPTIONS = ['Brand New', 'Like New', 'Used - Excellent', 'Used - Good', 'Used - Fair']
+const CONDITION_OPTIONS = [/*'Brand New', 'Like New', */'Used - Excellent', 'Used - Good', 'Used - Fair']
 const SIZE_OPTIONS = ['6XS', '5XS', '4XS', '3XS', '2XS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL']
 const COLOR_OPTIONS = ['Black', 'Grey', 'White', 'Brown', 'Tan', 'Cream', 'Yellow', 'Red', 'Burgundy', 'Orange', 'Pink', 'Purple', 'Blue', 'Navy', 'Green', 'Khaki', 'Multi', 'Silver', 'Gold']
 const SOURCE_OPTIONS = ['Vintage', 'Preloved', 'Reworked / Upcycled', 'Custom', 'Handmade', 'Deadstock', 'Designer', 'Repaired']
@@ -75,7 +75,7 @@ export class DepopModelContext implements ModelContext {
 
     constructor() {
         this.prompt = `
-            Generate product listing details for the clothing item in the attached images. Reply in JSON format
+            You are a fashion stylist and fashion buyer. Generate product listing details for the clothing item in the attached images. Reply in JSON format
             For the related categories, be sure to fill the fields with one of the following fields along with the other required fields
 
             if category == Tops: 
@@ -105,7 +105,8 @@ export class DepopModelContext implements ModelContext {
             1. If the name of the brand is not identifiable, set the brand to 'Other'
             2. For each field with multiple options, keep the values different
             3. Fill in the materials section based on any information presented on the tags. If no tags are present guess based off the options. 
-        `
+            4. For the description, write a ten word personalized listing description for the clothing article in the images. Do not mention anything else in the image that is not the clothing item.
+            `   
 
         this.responseFormat = {
             type: 'object', 

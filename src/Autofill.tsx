@@ -1,5 +1,5 @@
 import {DepopModelResponseObject } from "./generators/DepopGenerator"
-import { fetchB64String, fetchImageFile } from "./utils"
+import { fetchImageFile } from "./utils"
 
 export interface AutofillContext<T> {
     // fillOrder:string[]
@@ -68,8 +68,8 @@ export class DepopAutofillContext implements AutofillContext<DepopModelResponseO
         const dataTransfer = new DataTransfer();
         for(let i = 0; i < targetImages.length; i++){
             const imageURL = targetImages[i]
-            dataTransfer.items.add(await fetchImageFile(imageURL, `image-${i}`))
-        } 
+            dataTransfer.items.add(await fetchImageFile(imageURL, `image-${i}`, 100))
+        }
 
         imageInput.files = dataTransfer.files
         imageInput.dispatchEvent(new Event('change', {bubbles: true}))
@@ -184,7 +184,6 @@ export class ListingAutofiller {
     constructor(fillContext:AutofillContext<any>) {
         this.fillContext = fillContext
         this.totalFill = Object.keys(this.fillContext.mapping).length
-        
     }
 
     async fillNext():Promise<{status:boolean, fillIndex:number, total:number}>{
@@ -205,20 +204,4 @@ export class ListingAutofiller {
     reset(){
         this.fillI = 0
     }
-
-    // async autofill(progress:{value: number, total: number}){
-    //     // for(let i = 0; i < this.fillContext.fillOrder.length; i+=1){
-    //     const keys = Object.keys(this.fillContext.mapping)
-
-    //     // for(let i = 12; i < 13; i+=1){
-    //     for(let i = 0; i < keys.length; i+=1){
-    //     // for(let i = 0; i < 1; i+=1){
-    //         const targetSelector = keys[i]
-    //         console.log("target selector", i, targetSelector)
-    //         await this.fillContext.mapping[targetSelector]()
-    //         await new Promise(r => setTimeout(r, this.DELAY))
-
-    //         progress = {value: i, total: keys.length}
-    //     }
-    // }
 }

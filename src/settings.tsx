@@ -10,24 +10,26 @@ const SettingsWindow = () => {
     const [config, setConfig] = React.useState({} as SettingsConfig)
 
     React.useEffect(() => {
-        (async() => {
+        console.log("Test", Object.values(LLMType))
+
+        ;(async() => {
             const configData = await browser.storage.local.get('popgen-settings')
             if(configData && Object.hasOwn(configData, 'popgen-settings')) {
                 console.log("Pulling from: ", configData['popgen-settings'])
                 setConfig(configData['popgen-settings'] as SettingsConfig)
             }else {
                 setConfig({
-                    hostPath: 'localhost',
+                    hostPath: 'http://127.0.0.1',
                     hostPort: 11434, 
                     targetModel: LLMType.LLAVA
                 })
-            }            
+            }
         })()
     }, [])
 
     const handleConfigUpdate = (key:keyof(SettingsConfig), value:any) => {
         const tmp = Object.assign({}, config)
-        ;(tmp as any)[value] = key // change as "any to specific field"
+        ;(tmp as any)[key] = value // change as "any to specific field"
 
         console.log("updated to: ", tmp)
         setConfig(tmp)
@@ -40,11 +42,11 @@ const SettingsWindow = () => {
     }}>
         <header>PopGen - Settings</header>
         <main style={{display: 'flex', flexDirection: 'column', gap: 8}}>
-            <Input label="Target Model" type="option" options={Object.values(LLMType)} defaultValue={config.targetModel} 
+            <Input label="Target Model" type="option" options={Object.values(LLMType)} value={config.targetModel} 
                 onChange={(updated) => handleConfigUpdate("targetModel", updated)}
             />
-            <Input label="Host" type="text" defaultValue={config.hostPath} onChange={(updated) => handleConfigUpdate("hostPath", updated)} />
-            <Input label="Port" type="number" defaultValue={config.hostPort} onChange={(updated) => handleConfigUpdate("hostPort", updated)} />
+            <Input label="Host" type="text" value={config.hostPath} onChange={(updated) => handleConfigUpdate("hostPath", updated)} />
+            <Input label="Port" type="number" value={config.hostPort} onChange={(updated) => handleConfigUpdate("hostPort", updated)} />
         </main>
     </div>
 }

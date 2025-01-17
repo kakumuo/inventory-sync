@@ -3,19 +3,19 @@ import React from 'react'
 export type InputParam = {
     label:string, 
     type:'text',
-    defaultValue?:string,
-    onChange?:(updatedValue:string) => void
+    value:string,
+    onChange:(updatedValue:string) => void
 } | {
     label:string, 
     type:'number',
-    defaultValue?:number, 
-    onChange?:(updatedValue:string) => void
+    value:number, 
+    onChange:(updatedValue:string) => void
 } | {
     label:string,
     type:'option', 
     options:string[],
-    defaultValue?:string, 
-    onChange?:(updatedValue:string) => void
+    value:string, 
+    onChange:(updatedValue:string) => void
 } | {
     label:string,
     type:'custom', 
@@ -26,18 +26,23 @@ export type InputParam = {
 
 export const Input = (params:InputParam) => {
     if(params.type == 'option')
-        console.log(params.defaultValue)
+        console.log(params.value)
 
     return <div style={{display: 'grid', gridTemplateColumns: 'auto 1fr', gridTemplateRows: 'auto', gap: 8}}> 
         <p>{params.label}</p>{
         params.type == 'option' ? 
-            <select defaultValue={params.defaultValue && params.options.indexOf(params.defaultValue)} onChange={(ev) => params.onChange && params.onChange(ev.target.value)}>
-                {params.options.map((option, optionI) => <option key={optionI} label={option} value={optionI} />)}
+            <select onChange={(ev) => params.onChange(ev.target.value)} value={params.value}>
+                {params.options.map((option, optionI) => <option key={optionI} label={option} value={option} />)}
             </select>
             :
         params.type == 'custom' ? 
             <div></div>
             :
-            <input type={params.type} defaultValue={params.defaultValue} onBlur={(ev) => params.onChange && params.onChange(ev.target.value)} />
+            <input 
+                type={params.type} 
+                // defaultValue={params.defaultValue} 
+                value={params.value}
+                onChange={(ev) => params.onChange(ev.target.value)} 
+            />
     }</div>
 }

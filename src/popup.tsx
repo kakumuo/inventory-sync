@@ -11,9 +11,9 @@ const log = (message:any) => {
     console.log(`${new Date().toISOString()} - PopGen - ${message}`)
 }
 
-const PopGenMinimizedWindow = ({onClose, onMaximize}:{onClose:() => void, onMaximize:() => void}) => {
+const PopGenMinimizedWindow = ({isVisible, onClose, onMaximize}:{isVisible:boolean, onClose:() => void, onMaximize:() => void}) => {
     const [dragging, setDragging] = React.useState(false)
-    const [height, setHeight] = React.useState(0)
+    const [height, setHeight] = React.useState(50)
     const [dragStartTS, setDragStartTS] = React.useState(Date.now())
     const CLICK_THRESH_TS = 135
     const closeBtnRef = React.useRef<HTMLButtonElement>(null)
@@ -50,6 +50,7 @@ const PopGenMinimizedWindow = ({onClose, onMaximize}:{onClose:() => void, onMaxi
     }
 
     return <div style={{
+            display: !isVisible ? 'none' : 'block',
             userSelect:'none', position:'fixed', right: '0', top: height, border: 'solid', 
             width: 100, height: 50, zIndex: 100, background: 'white', padding: 16
         }}
@@ -90,7 +91,7 @@ enum RESIZE_DIR {
     NONE, NORTH, SOUTH, EAST, WEST
 }
 
-const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() => void}) => {
+const PopgenWindow = ({isVisible, onClose, onMinimize}:{isVisible:boolean, onClose:() => void, onMinimize:() => void}) => {
     const MAX_IMAGES = 8
     const [images, setImages] = React.useState<string[]>([])
     const [autofillStatus, setAutofillStatus] = React.useState<{isFilling:boolean, fillCount:number, total:number}>({isFilling: false, fillCount: 0, total: 0})
@@ -103,8 +104,6 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
     const popgenContext = React.useContext(PopgenWindowContext)
 
     React.useEffect(() => {
-        const canvas = document.createElement("canvas");
-
         ;(async() => {
             if(popgenContext.listingGen){
                 let imageDataFiles:string[] = []
@@ -117,8 +116,6 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
                 popgenContext.listingGen.setImages(imageDataFiles)
             }
         })()
-
-
     }, [images])
 
     const handleImageDrop = (ev:React.DragEvent) => {
@@ -164,7 +161,18 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
                 setAutofillStatus({isFilling: true, fillCount: resp.fillIndex, total: autofiller.totalFill})
             }
 
-            setAutofillStatus({isFilling: true, fillCount: 0, total: 0})
+            setAutofillStatus({isFilling: false, fillCount: 0, total: 0})
+
+            /* image test */
+            // const response = await popgenContext.listingGen.generate()
+            // const modelResp:DepopModelResponseObject = response.responseObj
+            // const tmpImages:string[] = [
+            //     "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcSmFaJFBNHUjTfzuZJubJwbXRMBAQODeSatAEFyIjYvfUQAVCPVZP2kSHO9f8w9C-vkZhNZ_YGVzLCxAxJqXbqo-cBxKL1JqkXz6cj_f8XijhTtRPbmO2oh"
+            // ]
+            // const autofiller = new ListingAutofiller(new DepopAutofillContext({}, tmpImages))
+
+            // await autofiller.fillNext()
+            // autofiller.reset()
         }
     }
 
@@ -214,22 +222,22 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
     return <div style={{
         position: 'fixed', width: windowSize.x, height: windowSize.y, 
         border:'solid', top: position.y, left: position.x, zIndex: 1000, 
-        display: 'grid', gridTemplateRows:'auto 1fr auto', gridTemplateColumns: 'auto',
+        display: !isVisible ? 'none' : 'grid', gridTemplateRows:'auto 1fr auto', gridTemplateColumns: 'auto',
         backgroundColor: 'white',
         resize: 'both'
     }}
         
     >
         {
+            // resize handles
             [
-                {/*border: 'solid green'  ,*/ top: '0', width:'100%', height: 4, cursor: 'n-resize', resizeDir:RESIZE_DIR.NORTH}, 
-                {/*border: 'solid orange' ,*/ bottom: '0', width:'100%',height: 4, cursor: 's-resize', resizeDir:RESIZE_DIR.SOUTH}, 
-                {/*border: 'solid blue'   ,*/ right: '0', height:'100%',width: 4, cursor: 'e-resize', resizeDir:RESIZE_DIR.EAST}, 
-                {/*border: 'solid red'    ,*/ left: '0', height:'100%',width: 4, cursor: 'w-resize', resizeDir:RESIZE_DIR.WEST}
+                {/*border: 'solid green'  ,*/ transform: 'translate(0,-100%)', top: '0', width:'100%', height: 4, cursor: 'n-resize', resizeDir:RESIZE_DIR.NORTH}, 
+                {/*border: 'solid orange' ,*/ transform: 'translate(0, 100%)', bottom: '0', width:'100%',height: 4, cursor: 's-resize', resizeDir:RESIZE_DIR.SOUTH}, 
+                {/*border: 'solid blue'   ,*/ transform: 'translate( 100%, 0)', right: '0', height:'100%',width: 4, cursor: 'e-resize', resizeDir:RESIZE_DIR.EAST}, 
+                {/*border: 'solid red'    ,*/ transform: 'translate(-100%, 0)', left: '0', height:'100%',width: 4, cursor: 'w-resize', resizeDir:RESIZE_DIR.WEST}
             ].map((divProp, divPropI) => <div key={divPropI} style={{...divProp, position: 'absolute'}} onMouseDown={() => setResizing(divProp.resizeDir)} />)
         }
 
-        {/* <div style={{display: 'grid', gridTemplateRows:'auto 1fr auto', gridTemplateColumns: 'auto'}}> */}
             <header 
             onMouseDown={() => setDragging(true)}
             style={{display: 'grid', gridTemplateColumns: '1fr auto auto', gridTemplateRows: 'auto',
@@ -280,9 +288,12 @@ const PopgenWindow = ({onClose, onMinimize}:{onClose:() => void, onMinimize:() =
                     </main>
             }
 
-            <button onClick={handleGenerate}>Generate</button>
-            {/* <button disabled={images.length == 0 || autofillStatus.isFilling} onClick={handleGenerate}>Generate</button> */}
-        {/* </div> */}
+            <div style={{display: 'grid', gridTemplateColumns: '1fr auto', gridTemplateRows: 'auto'}}>
+                <button style={{width: '100%'}} disabled={autofillStatus.isFilling || images.length == 0} onClick={handleGenerate}>Generate</button>
+                {images.length > 0 && !autofillStatus.isFilling && 
+                    <button style={{width: '100%'}} children={"Clear Images"} onClick={() => setImages([])} />}
+            </div>
+
     </div>
 }
 
@@ -296,7 +307,7 @@ type PopGenContextData = {
 const PopgenWindowContext = React.createContext({} as PopGenContextData)
 
 const PopgenWindowWrapper = () => {
-    const [isMinimized, setIsMinimized] = React.useState(true)
+    const [isMinimized, setIsMinimized] = React.useState(false)
     const [isOpen, setIsOpen] = React.useState(true)
     const [config, setConfig] = React.useState<SettingsConfig | null>(null)
     const [listingGen, setListingGen] = React.useState<ListingGenerator | null>(null)
@@ -337,10 +348,10 @@ const PopgenWindowWrapper = () => {
         modelContext: modelContext
     }}>
         {
-            isOpen && (isMinimized ? 
-                <PopGenMinimizedWindow onClose={() => setIsOpen(false)} onMaximize={() => setIsMinimized(false)} />
-                :<PopgenWindow onClose={() => setIsOpen(false)} onMinimize={() => setIsMinimized(true)}/>
-            )
+            isOpen && <>
+                <PopGenMinimizedWindow isVisible={isMinimized} onClose={() => setIsOpen(false)} onMaximize={() => setIsMinimized(!isMinimized)} />
+                <PopgenWindow isVisible={!isMinimized} onClose={() => setIsOpen(false)} onMinimize={() => setIsMinimized(!isMinimized)}/>
+            </>
         }
     </PopgenWindowContext.Provider>
     </React.StrictMode>

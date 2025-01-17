@@ -1,6 +1,11 @@
 # Overview
 A simple app to autofill generated listing details on Depop
 
+# Installation
+1. Go into the web browsers manfest file 
+2. Select the manifest.json file from the root directory
+3. Click open to load the extension
+
 # Dependencies: 
 - React
 - Llava: https://ollama.com/library/llava; 
@@ -17,15 +22,16 @@ A simple app to autofill generated listing details on Depop
 
 # TODO: 
 ### Fixes
-- Default value for target model
+- Error when generating: "TypeError: NetworkError when attempting to fetch resource"
 - Images are not properly deleted when injecting another set
+- Moves window when resizing from top or side
 
 ### Future
 - Sticky on scroll [DONE]
 - Button to remove all images [DONE]
 - Testing page for depop listing autofill [DONE]
 - System for autofilling depop listing content [DONE]
-- LLM models wrapping through settings
+- LLM models wrapping through settings [IGNORE]
 - Image padding with gradient
 - Allow for LLM Host path to be tested in settings
 - Drag-and-drop rearrangement of images in content section [IGNORE]
@@ -38,3 +44,5 @@ A simple app to autofill generated listing details on Depop
 - Redo for popup images
 - Redo for prompt generation
 - Strict prompt generation for brand names
+- Prompt generation customization for specific fields in settings
+- Corner resizing
