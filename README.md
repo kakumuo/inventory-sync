@@ -2,9 +2,11 @@
 A simple app to autofill generated listing details on Depop
 
 # Installation
-1. Go into the web browsers manfest file 
+1. Go into the web browsers manfest file
+![alt text](./info/step1.png) 
 2. Select the manifest.json file from the root directory
 3. Click open to load the extension
+![alt text](./info/step2.png) 
 
 # Dependencies: 
 - React
